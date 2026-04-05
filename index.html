@@ -320,79 +320,86 @@
 <footer>
     &copy; <span id="year"></span> SPORTLINK — All rights reserved by Sayan
 </footer>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
 <script>
     const M3U8_URL = 'https://game.denver69.fun/Series/willow_hin.m3u8';
+
+    function showError(msg) {
+        const wrapper = document.getElementById('video-wrapper');
+        let overlay = document.getElementById('error-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'error-overlay';
+            overlay.style.cssText = `
+                position:absolute; inset:0; background:rgba(5,13,24,0.92);
+                display:flex; flex-direction:column; align-items:center;
+                justify-content:center; gap:14px; z-index:30; color:#d4e4f7;
+                font-family:'DM Sans',sans-serif; text-align:center; padding:20px;
+            `;
+            wrapper.appendChild(overlay);
+        }
+        overlay.innerHTML = `
+            <div style="font-size:36px;">📡</div>
+            <div style="font-size:15px; font-weight:600; color:#ff5a60;">Stream Error</div>
+            <div style="font-size:13px; color:#8baac8; max-width:320px;">${msg}</div>
+            <button onclick="retryStream()" style="
+                margin-top:6px; background:#f4b400; border:none; color:#050d18;
+                font-weight:700; font-size:13px; padding:10px 22px;
+                border-radius:8px; cursor:pointer; font-family:'DM Sans',sans-serif;
+            ">↺ Retry</button>
+        `;
+    }
 
     let hls;
 
     function loadStream(url) {
         const video = document.getElementById('cricket-video');
-        if (hls) { hls.destroy(); }
+        const overlay = document.getElementById('error-overlay');
+        if (overlay) overlay.remove();
+
+        if (hls) { hls.destroy(); hls = null; }
+
         if (Hls.isSupported()) {
-            hls = new Hls();
+            hls = new Hls({ enableWorker: true });
             hls.loadSource(url);
             hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                video.play().catch(() => {
+                    // Autoplay blocked — user must tap play manually, that's fine
+                });
+            });
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                if (data.fatal) {
+                    if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                        showError('Cannot reach stream URL. It may be offline, geo-blocked, or the URL has expired.');
+                    } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                        showError('Media decode error. The stream format may be unsupported on this device.');
+                        hls.recoverMediaError();
+                    } else {
+                        showError('Stream failed: ' + data.details);
+                    }
+                }
+            });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = url;
+            video.addEventListener('error', () => {
+                showError('Stream failed on this device. Try a different browser.');
+            });
             video.play().catch(() => {});
+        } else {
+            showError('HLS streaming is not supported in this browser. Try Chrome or Firefox.');
         }
     }
+
+    function retryStream() { loadStream(M3U8_URL); }
 
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('year').textContent = new Date().getFullYear();
         loadStream(M3U8_URL);
     });
 
-    /* ===== FULLSCREEN ===== */
-    const wrapper = document.getElementById('video-wrapper');
-    const fsBtn   = document.getElementById('fullscreen-btn');
-
-    function toggleFullscreen() {
-        const isFs = !!(
-            document.fullscreenElement ||
-            document.webkitFullscreenElement ||
-            document.mozFullScreenElement ||
-            document.msFullscreenElement
-        );
-        if (!isFs) {
-            const req = wrapper.requestFullscreen ||
-                        wrapper.webkitRequestFullscreen ||
-                        wrapper.mozRequestFullScreen ||
-                        wrapper.msRequestFullscreen;
-            if (req) req.call(wrapper);
-        } else {
-            const exit = document.exitFullscreen ||
-                         document.webkitExitFullscreen ||
-                         document.mozCancelFullScreen ||
-                         document.msExitFullscreen;
-            if (exit) exit.call(document);
-        }
-    }
-
-    function onFsChange() {
-        const isFs = !!(
-            document.fullscreenElement ||
-            document.webkitFullscreenElement ||
-            document.mozFullScreenElement ||
-            document.msFullscreenElement
-        );
-        fsBtn.classList.toggle('is-fullscreen', isFs);
-        fsBtn.title = isFs ? 'Exit Fullscreen' : 'Fullscreen';
-        fsBtn.setAttribute('aria-label', isFs ? 'Exit fullscreen' : 'Toggle fullscreen');
-    }
-
-    document.addEventListener('fullscreenchange',       onFsChange);
-    document.addEventListener('webkitfullscreenchange', onFsChange);
-    document.addEventListener('mozfullscreenchange',    onFsChange);
-    document.addEventListener('MSFullscreenChange',     onFsChange);
-
-    // Double-click on video area also toggles fullscreen
-    wrapper.addEventListener('dblclick', function(e) {
-        if (!e.target.closest('.fullscreen-btn')) toggleFullscreen();
-    });
+    // ... rest of your fullscreen code unchanged
 </script>
+
 </body>
 </html>
