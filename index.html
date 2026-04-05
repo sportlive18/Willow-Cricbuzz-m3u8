@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SPORTLINK — Live Streams</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050d18;
+            --surface: #0a1628;
+            --surface2: #0f1e35;
+            --gold: #f4b400;
+            --gold2: #ffcf47;
+            --red: #e8323a;
+            --green: #00e676;
+            --muted: #5a7190;
+            --text: #d4e4f7;
+            --text2: #8baac8;
+            --glow: rgba(244, 180, 0, 0.18);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-layer { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+        .bg-layer::before {
+            content: '';
+            position: absolute; top: -20%; left: -10%; width: 60%; height: 60%;
+            background: radial-gradient(ellipse, rgba(244,180,0,0.07) 0%, transparent 70%);
+            animation: driftA 18s ease-in-out infinite alternate;
+        }
+        .bg-layer::after {
+            content: '';
+            position: absolute; bottom: -20%; right: -10%; width: 55%; height: 55%;
+            background: radial-gradient(ellipse, rgba(0,120,255,0.06) 0%, transparent 70%);
+            animation: driftB 22s ease-in-out infinite alternate;
+        }
+        @keyframes driftA { from { transform: translate(0,0) scale(1); } to { transform: translate(4%,6%) scale(1.1); } }
+        @keyframes driftB { from { transform: translate(0,0) scale(1); } to { transform: translate(-5%,-4%) scale(1.08); } }
+
+        header {
+            position: relative; z-index: 10;
+            padding: 20px 28px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(244,180,0,0.12);
+            background: rgba(5,13,24,0.85);
+            backdrop-filter: blur(12px);
+        }
+        .brand { display: flex; align-items: center; gap: 16px; }
+        .logo-wrap { position: relative; }
+        .logo {
+            width: 52px; height: 52px;
+            background: linear-gradient(135deg, var(--gold), #e08000);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Bebas Neue', sans-serif; font-size: 20px;
+            color: #050d18; letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(244,180,0,0.4), 0 4px 12px rgba(0,0,0,0.6);
+            transition: box-shadow 0.3s;
+        }
+        .logo:hover { box-shadow: 0 0 32px rgba(244,180,0,0.7), 0 4px 12px rgba(0,0,0,0.6); }
+        .pulse-ring {
+            position: absolute; inset: -4px; border-radius: 14px;
+            border: 2px solid var(--gold); opacity: 0;
+            animation: pulseRing 3s ease-out infinite;
+        }
+        @keyframes pulseRing { 0% { opacity: 0.6; transform: scale(1); } 100% { opacity: 0; transform: scale(1.3); } }
+        .brand-text h1 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; color: #fff; line-height: 1; }
+        .brand-text span { font-size: 12px; color: var(--text2); letter-spacing: 1.5px; text-transform: uppercase; }
+
+        .live-badge {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(232,50,58,0.15); border: 1px solid rgba(232,50,58,0.4);
+            padding: 5px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: 600; color: #ff5a60; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .live-dot {
+            width: 7px; height: 7px; background: var(--red); border-radius: 50%;
+            animation: blink 1.2s ease-in-out infinite; box-shadow: 0 0 6px var(--red);
+        }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .tg-btn {
+            display: flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, #25d366, #128c7e);
+            border: none; padding: 9px 16px; border-radius: 10px;
+            color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: all 0.25s; box-shadow: 0 4px 14px rgba(37,211,102,0.35);
+            text-decoration: none;
+        }
+        .tg-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37,211,102,0.55); }
+        .tg-btn svg { width: 16px; height: 16px; }
+
+        .player-section { position: relative; z-index: 5; max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        .player-card {
+            background: var(--surface); border-radius: 16px; overflow: hidden;
+            border: 1px solid rgba(244,180,0,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+        }
+
+        .channel-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 20px; background: var(--surface2);
+            border-bottom: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; gap: 10px;
+        }
+        .channel-label { display: flex; align-items: center; gap: 10px; }
+        .channel-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #1db954, #0d8c3e);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;
+        }
+        .channel-name { font-weight: 600; font-size: 15px; color: #fff; }
+        .channel-sub { font-size: 11px; color: var(--text2); letter-spacing: 0.5px; }
+
+        /* === VIDEO WRAPPER === */
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            background: #000;
+        }
+        .video-wrapper video {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none; background: #000;
+        }
+
+        /* Fullscreen state overrides */
+        .video-wrapper:-webkit-full-screen { padding-bottom: 0; height: 100%; }
+        .video-wrapper:-moz-full-screen    { padding-bottom: 0; height: 100%; }
+        .video-wrapper:fullscreen          { padding-bottom: 0; height: 100%; }
+        .video-wrapper:-webkit-full-screen video,
+        .video-wrapper:-moz-full-screen video,
+        .video-wrapper:fullscreen video    { position: static; width: 100%; height: 100%; }
+
+        /* === FULLSCREEN BUTTON === */
+        .fullscreen-btn {
+            position: absolute;
+            bottom: 14px; right: 14px;
+            z-index: 20;
+            background: rgba(5, 13, 24, 0.75);
+            border: 1px solid rgba(244, 180, 0, 0.35);
+            color: var(--gold);
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: all 0.22s ease;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+        }
+        .fullscreen-btn:hover {
+            background: rgba(244, 180, 0, 0.18);
+            border-color: var(--gold);
+            box-shadow: 0 0 18px rgba(244,180,0,0.35), 0 4px 16px rgba(0,0,0,0.5);
+            transform: scale(1.1);
+        }
+        .fullscreen-btn svg { width: 18px; height: 18px; transition: transform 0.2s; }
+        .fullscreen-btn:hover svg { transform: scale(1.08); }
+        .fullscreen-btn .icon-expand   { display: block; }
+        .fullscreen-btn .icon-compress { display: none; }
+        .fullscreen-btn.is-fullscreen .icon-expand   { display: none; }
+        .fullscreen-btn.is-fullscreen .icon-compress { display: block; }
+
+        .quality-bar {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 20px; background: var(--surface2);
+            border-top: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap;
+        }
+        .quality-label { font-size: 12px; color: var(--text2); font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; margin-right: 4px; }
+        .quality-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text2); padding: 5px 14px; border-radius: 20px;
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .quality-btn:hover { background: rgba(244,180,0,0.12); border-color: rgba(244,180,0,0.4); color: var(--gold); transform: translateY(-1px); }
+        .quality-btn.active { background: linear-gradient(135deg, var(--gold), #e08000); border-color: var(--gold); color: #050d18; box-shadow: 0 0 12px rgba(244,180,0,0.4); }
+        .quality-note { margin-left: auto; font-size: 11px; color: var(--muted); }
+
+        .info-strip {
+            display: flex; gap: 16px; padding: 14px 20px;
+            font-size: 13px; color: var(--text2);
+            border-top: 1px solid rgba(255,255,255,0.04);
+            background: rgba(0,0,0,0.2); flex-wrap: wrap;
+        }
+        .info-item { display: flex; align-items: center; gap: 6px; }
+        .info-item svg { opacity: 0.6; }
+
+        footer {
+            position: relative; z-index: 5; text-align: center;
+            padding: 20px; color: var(--muted); font-size: 12px;
+            border-top: 1px solid rgba(255,255,255,0.04); letter-spacing: 0.5px;
+        }
+
+        .ticker-wrap { overflow: hidden; background: linear-gradient(90deg, var(--gold), #e08000); padding: 7px 0; }
+        .ticker { display: flex; white-space: nowrap; animation: ticker 30s linear infinite; }
+        .ticker span { color: #050d18; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 0 40px; text-transform: uppercase; }
+        @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        @media (max-width: 560px) {
+            header { padding: 14px 16px; }
+            .brand-text h1 { font-size: 22px; }
+            .tg-btn span { display: none; }
+            .quality-note { display: none; }
+            .fullscreen-btn { bottom: 10px; right: 10px; width: 36px; height: 36px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-layer"></div>
+
+<div class="ticker-wrap" aria-hidden="true">
+    <div class="ticker">
+        <span>📺 SPORTLINK Live</span>
+        <span>⚡ HD Streaming Available</span>
+        <span>🏆 Live Matches 24/7</span>
+        <span>📱 Watch on Any Device</span>
+        <span>💬 Join WhatsApp for Updates</span>
+        <span>📺 SPORTLINK Live</span>
+        <span>⚡ HD Streaming Available</span>
+        <span>🏆 Live Matches 24/7</span>
+        <span>📱 Watch on Any Device</span>
+        <span>💬 Join WhatsApp for Updates</span>
+    </div>
+</div>
+
+<header>
+    <div class="brand">
+        <div class="logo-wrap">
+            <div class="logo">SL</div>
+            <div class="pulse-ring"></div>
+        </div>
+        <div class="brand-text">
+            <h1>SPORTLINK</h1>
+            <span>Live Stream Hub</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="live-badge">
+            <div class="live-dot"></div>
+            Live
+        </div>
+        <a href="https://whatsapp.com/channel/0029VbC2oQsC6ZvmwpR3v73v" target="_blank" rel="noopener" class="tg-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-4.869 1.171L.039 2.487l1.54 4.897A9.9 9.9 0 001.07 12c0 5.45 4.436 9.884 9.888 9.884 2.64 0 5.122-.997 7.010-2.8l4.898 1.541-1.572-4.897a9.879 9.879 0 001.212-4.748c0-5.448-4.436-9.884-9.888-9.884"/></svg>
+            <span>Join WhatsApp</span>
+        </a>
+    </div>
+</header>
+
+<main class="player-section">
+    <div class="player-card">
+
+        <div class="channel-bar">
+            <div class="channel-label">
+                <div class="channel-icon">🏏</div>
+                <div>
+                    <div class="channel-name">Willow Cricket-Hin</div>
+                    <div class="channel-sub">Live HD Stream</div>
+                </div>
+            </div>
+            <div class="live-badge" style="font-size:11px;">
+                <div class="live-dot"></div>
+                On Air
+            </div>
+        </div>
+
+        <!-- Video -->
+        <div class="video-wrapper" id="video-wrapper">
+            <video id="cricket-video" controls autoplay playsinline></video>
+
+            <!-- Fullscreen Button -->
+            <button class="fullscreen-btn" id="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen" aria-label="Toggle fullscreen">
+                <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 3 21 3 21 9"/>
+                    <polyline points="9 21 3 21 3 15"/>
+                    <line x1="21" y1="3" x2="14" y2="10"/>
+                    <line x1="3" y1="21" x2="10" y2="14"/>
+                </svg>
+                <svg class="icon-compress" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4 14 10 14 10 20"/>
+                    <polyline points="20 10 14 10 14 4"/>
+                    <line x1="10" y1="14" x2="3" y2="21"/>
+                    <line x1="21" y1="3" x2="14" y2="10"/>
+                </svg>
+            </button>
+        </div>
+
+
+
+        <div class="info-strip">
+            <div class="info-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                24/7 Live
+            </div>
+            <div class="info-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6s4-2 11-2 11 2 11 2v13s-4-2-11-2-11 2-11 2V6z"/></svg>
+                Willow Cricket
+            </div>
+            <div class="info-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                HD Available
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<footer>
+    &copy; <span id="year"></span> SPORTLINK — All rights reserved by Sayan
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
+<script>
+    const M3U8_URL = 'https://game.denver69.fun/Series/willow_hin.m3u8';
+
+    let hls;
+
+    function loadStream(url) {
+        const video = document.getElementById('cricket-video');
+        if (hls) { hls.destroy(); }
+        if (Hls.isSupported()) {
+            hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            video.play().catch(() => {});
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('year').textContent = new Date().getFullYear();
+        loadStream(M3U8_URL);
+    });
+
+    /* ===== FULLSCREEN ===== */
+    const wrapper = document.getElementById('video-wrapper');
+    const fsBtn   = document.getElementById('fullscreen-btn');
+
+    function toggleFullscreen() {
+        const isFs = !!(
+            document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement
+        );
+        if (!isFs) {
+            const req = wrapper.requestFullscreen ||
+                        wrapper.webkitRequestFullscreen ||
+                        wrapper.mozRequestFullScreen ||
+                        wrapper.msRequestFullscreen;
+            if (req) req.call(wrapper);
+        } else {
+            const exit = document.exitFullscreen ||
+                         document.webkitExitFullscreen ||
+                         document.mozCancelFullScreen ||
+                         document.msExitFullscreen;
+            if (exit) exit.call(document);
+        }
+    }
+
+    function onFsChange() {
+        const isFs = !!(
+            document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement
+        );
+        fsBtn.classList.toggle('is-fullscreen', isFs);
+        fsBtn.title = isFs ? 'Exit Fullscreen' : 'Fullscreen';
+        fsBtn.setAttribute('aria-label', isFs ? 'Exit fullscreen' : 'Toggle fullscreen');
+    }
+
+    document.addEventListener('fullscreenchange',       onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+    document.addEventListener('mozfullscreenchange',    onFsChange);
+    document.addEventListener('MSFullscreenChange',     onFsChange);
+
+    // Double-click on video area also toggles fullscreen
+    wrapper.addEventListener('dblclick', function(e) {
+        if (!e.target.closest('.fullscreen-btn')) toggleFullscreen();
+    });
+</script>
+</body>
+</html>
